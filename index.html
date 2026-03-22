@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Play & Earn - Premium App</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        /* --- Fonts & Variables --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&family=Orbitron:wght@700&display=swap');
+
+        :root {
+            /* App Colors from Screenshot */
+            --bg-blue: #1b5b97; 
+            --header-bg: #2b0b4d; 
+            --text-yellow: #ffdf00;
+            
+            /* Game Colors */
+            --bg-dark: #070b14;
+            --bg-panel: #111a24;
+            
+            /* Neon Colors for Players */
+            --neon-red: #ff2a2a;
+            --neon-blue: #00d4ff;
+            --neon-green: #00ff55;
+            --neon-yellow: #ffea00;
+
+            --spin-time: 3s;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-blue);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header --- */
+        header {
+            width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .header-title { 
+            font-size: 22px; 
+            font-weight: 800; 
+            color: var(--text-yellow); 
+            letter-spacing: 0.5px;
+        }
+        .header-wallet { 
+            font-weight: 700; 
+            font-size: 16px; 
+            color: var(--text-yellow); 
+        }
+        
+        .profile-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .profile-icon {
+            width: 38px; height: 38px;
+            fill: #1976d2; 
+        }
+        
+        #profile-dropdown {
+            position: absolute;
+            top: 50px; right: 0;
+            background-color: white;
+            color: #333;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 200px;
+            z-index: 300;
+        }
+        #profile-dropdown.active { display: flex; }
+        #user-email-display { font-size: 14px; font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 10px; word-break: break-all; }
+        #logout-btn {
+            background-color: #e53935; color: white; border: none; padding: 10px;
+            border-radius: 5px; font-weight: bold; cursor: pointer;
+        }
+
+        /* --- Screens --- */
+        .screen {
+            flex-grow: 1; position: absolute; top: 60px; left: 0; right: 0; bottom: 0;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 10;
+        }
+        .screen.active { display: flex; }
+
+        /* --- Main Menu Screen --- */
+        #menu-screen {
+            background-color: var(--bg-blue);
+        }
+        
+        .menu-card {
+            background-color: #f6f8fb; 
+            width: 90%; max-width: 400px;
+            border-radius: 25px;
+            padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .gradient-text-1 {
+            font-size: 42px; font-weight: 900; line-height: 1.1; letter-spacing: 2px;
+            background: linear-gradient(to right, #4a90e2, #50e3c2, #b8e986);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .gradient-text-2 {
+            font-size: 50px; font-weight: 900; line-height: 1.1; letter-spacing: 2px; margin-bottom: 15px;
+            background: linear-gradient(to right, #7e57c2, #29b6f6, #26a69a, #ffee58);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .menu-badge {
+            background-color: #ff9800;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 8px 25px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            text-transform: uppercase;
+        }
+
+        .btn-3d {
+            width: 100%;
+            padding: 18px 10px;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            margin-bottom: 15px;
+            transition: transform 0.1s;
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            border-bottom-width: 1px !important;
+            margin-bottom: 19px; 
+        }
+        
+        .btn-red {
+            background: linear-gradient(to bottom, #f4514e, #d32f2f);
+            border-bottom: 5px solid #9a0007;
+            box-shadow: 0 5px 15px rgba(211, 47, 47, 0.4);
+        }
+        .btn-green {
+            background: linear-gradient(to bottom, #4caf50, #2e7d32);
+            border-bottom: 5px solid #005005;
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.4);
+        }
+
+        /* --- Auth Overlay --- */
+        #auth-screen { background: rgba(0,0,0,0.9); z-index: 400; }
+        .auth-card {
+            background: #fff; padding: 30px; border-radius: 20px; width: 90%; max-width: 350px;
+            display: flex; flex-direction: column; gap: 15px; text-align: center; color: #333;
+        }
+        .auth-card input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+        .auth-card button { background: var(--bg-blue); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* --- Game Board Screen --- */
+        #game-screen {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.05"/><rect width="100%" height="100%" fill="%23070b14" opacity="0.85"/></svg>');
+            background-size: cover;
+            color: white;
+        }
+        
+        .game-board-container {
+            position: relative;
+            width: 100vmin; max-width: 600px;
+            aspect-ratio: 1/1; 
+            margin: auto;
+        }
+
+        /* --- Player Cards (4 Corners) --- */
+        .player-card {
+            position: absolute;
+            width: 32%; height: 32%;
+            background: rgba(17, 26, 36, 0.9);
+            border-radius: 15px;
+            padding: 10px;
+            display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .top-left { top: 3%; left: 3%; }
+        .top-right { top: 3%; right: 3%; }
+        .bottom-left { bottom: 3%; left: 3%; }
+        .bottom-right { bottom: 3%; right: 3%; }
+
+        .player-user { border-color: rgba(255,42,42,0.3); }
+        .player-cpu1 { border-color: rgba(0,212,255,0.3); }
+        .player-cpu2 { border-color: rgba(0,255,85,0.3); }
+        .player-cpu3 { border-color: rgba(255,234,0,0.3); }
+
+        .player-user.active-turn { box-shadow: 0 0 20px var(--neon-red); border-color: var(--neon-red); transform: scale(1.05); z-index: 5;}
+        .player-cpu1.active-turn { box-shadow: 0 0 20px var(--neon-blue); border-color: var(--neon-blue); transform: scale(1.05); z-index: 5;}
+        .player-cpu2.active-turn { box-shadow: 0 0 20px var(--neon-green); border-color: var(--neon-green); transform: scale(1.05); z-index: 5;}
+        .player-cpu3.active-turn { box-shadow: 0 0 20px var(--neon-yellow); border-color: var(--neon-yellow); transform: scale(1.05); z-index: 5;}
+
+        .player-header { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        .player-name { font-weight: 800; font-size: 11px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%; }
+        .player-user .player-name { color: var(--neon-red); }
+        .player-cpu1 .player-name { color: var(--neon-blue); }
+        .player-cpu2 .player-name { color: var(--neon-green); }
+        .player-cpu3 .player-name { color: var(--neon-yellow); }
+
+        .dice-icon {
+            width: 25px; height: 25px; background: rgba(255,255,255,0.1); border-radius: 5px;
+            display: grid; place-items: center; font-size: 16px; border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .progress-container { width: 100%; text-align: center; }
+        .progress-text { font-size: 10px; color: #aaa; margin-bottom: 3px; font-weight: bold;}
+        .progress-bar-bg { width: 100%; height: 8px; background: #000; border-radius: 4px; overflow: hidden; border: 1px solid #333;}
+        .progress-bar-fill { height: 100%; width: 0%; transition: width 0.5s; }
+        .player-user .progress-bar-fill { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); }
+        .player-cpu1 .progress-bar-fill { background: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); }
+        .player-cpu2 .progress-bar-fill { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+        .player-cpu3 .progress-bar-fill { background: var(--neon-yellow); box-shadow: 0 0 8px var(--neon-yellow); }
+
+        #user-spin-btn {
+            background: linear-gradient(to right, #ff2a2a, #aa0000); color: white; border: none; padding: 8px 0; width: 100%;
+            border-radius: 5px; font-weight: bold; cursor: pointer; display: none;
+            box-shadow: 0 0 10px rgba(255,42,42,0.8); border: 1px solid #ff7777;
+        }
+        #user-spin-btn:active { transform: scale(0.95); }
+        .player-user.active-turn #user-spin-btn { display: block; animation: pulse 1.5s infinite alternate; }
+
+        @keyframes pulse { from { opacity: 0.8; box-shadow: 0 0 5px var(--neon-red); } to { opacity: 1; box-shadow: 0 0 20px var(--neon-red); } }
+
+        /* --- Premium Stone & Neon Spinner --- */
+        .spinner-wrapper {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 50%; aspect-ratio: 1/1; 
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        .spinner-pointer {
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 35px solid var(--text-yellow);
+            filter: drop-shadow(0 0 10px var(--text-yellow)); z-index: 20;
+        }
+
+        .spinner-wheel {
+            width: 100%; height: 100%; border-radius: 50%;
+            position: relative; overflow: hidden;
+            background-color: #121f2d;
+            background-image: radial-gradient(circle at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.8) 100%),
+                              url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23f)" opacity="0.15"/></svg>');
+            border: 6px solid #08121d;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 30px #000;
+            transition: transform var(--spin-time) cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .stone-ring {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        .ring-1 { width: 85%; height: 85%; }
+        .ring-2 { width: 65%; height: 65%; }
+
+        .spinner-center {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 25%; height: 25%; background: #050a0f; border-radius: 50%; z-index: 10;
+            border: 3px solid #08121d; display: grid; place-items: center;
+            box-shadow: inset 0 0 15px #000, 0 0 20px var(--neon-green);
+        }
+        .spinner-center svg {
+            width: 60%; height: 60%; fill: var(--neon-green);
+            filter: drop-shadow(0 0 8px var(--neon-green));
+            animation: breathe 2s infinite alternate;
+        }
+        @keyframes breathe { from { transform: scale(0.9); opacity: 0.8; } to { transform: scale(1.1); opacity: 1; } }
+
+        .segment-number {
+            position: absolute; top: 6%; left: 50%;
+            transform-origin: 50% 100%; 
+            height: 44%; 
+            display: flex; justify-content: flex-start; align-items: flex-start;
+            font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: bold;
+            z-index: 5;
+        }
+        .segment-number span { display: block; text-shadow: 0 0 8px currentColor, 0 0 15px currentColor; }
+
+        #turn-indicator {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85); border: 2px solid #555; padding: 12px 25px;
+            border-radius: 30px; font-weight: 800; font-size: 16px; z-index: 50;
+            display: none; letter-spacing: 2px; text-transform: uppercase; text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8); color: white;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Top Header -->
+    <header>
+        <div class="header-title">Play & Earn</div>
+        <div class="header-wallet">Wallet: PKR <span id="wallet-display">0</span></div>
+        <div class="profile-container" id="profile-btn">
+            <svg class="profile-icon" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <div id="profile-dropdown">
+                <div id="user-email-display">user@example.com</div>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="screen active">
+        <div class="auth-card">
+            <h2 id="auth-title" style="color: #1b5b97;">Login</h2>
+            <input type="email" id="auth-email" placeholder="Email Address">
+            <input type="password" id="auth-password" placeholder="Password">
+            <button id="auth-btn">Login</button>
+            <p id="auth-error" style="color:red; font-size:12px;"></p>
+            <p style="font-size: 13px;">Need an account? <span id="switch-auth" style="color:#1b5b97; cursor:pointer; font-weight:bold;">Sign Up</span></p>
+        </div>
+    </div>
+
+    <!-- Main Menu Screen -->
+    <div id="menu-screen" class="screen">
+        <div class="menu-card">
+            <div class="gradient-text-1">PLAY & WIN</div>
+            <div class="gradient-text-2">1000PKR</div>
+            
+            <div class="menu-badge">★ Earn PKR by Beating AI ★</div>
+            
+            <button id="start-game-btn" class="btn-3d btn-red">
+                🤖 PLAY VS CPU (BET PKR 75)
+            </button>
+            
+            <button class="btn-3d btn-green" onclick="alert('Practice Mode Coming Soon!')">
+                👥 PRACTICE / PASS & PLAY
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-board-container">
+            
+            <div id="turn-indicator">User's Turn</div>
+
+            <!-- 1. USER (Red) -->
+            <div class="player-card player-user top-left" id="card-0">
+                <div class="player-header">
+                    <span class="player-name">YOU</span>
+                    <div class="dice-icon">🎲</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-text">Path: <span id="steps-0">0</span>/50</div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-0"></div></div>
+                </div>
+                <button id="user-spin-btn">SPIN WHEEL</button>
+            </div>
+
+            <!-- 2. CPU 1 (Blue) -->
+            <div class="player-card player-cpu1 top-right" id="card-1">
+                <div class="player-header">
+                    <span class="player-name" id="name-1">Player 2</span>
+                    <div class="dice-icon">🎲</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-text">Path: <span id="steps-1">0</span>/50</div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-1"></div></div>
+                </div>
+            </div>
+
+            <!-- 3. CPU 2 (Green) -->
+            <div class="player-card player-cpu2 bottom-left" id="card-2">
+                <div class="player-header">
+                    <span class="player-name" id="name-2">Player 3</span>
+                    <div class="dice-icon">🎲</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-text">Path: <span id="steps-2">0</span>/50</div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-2"></div></div>
+                </div>
+            </div>
+
+            <!-- 4. CPU 3 (Yellow) -->
+            <div class="player-card player-cpu3 bottom-right" id="card-3">
+                <div class="player-header">
+                    <span class="player-name" id="name-3">Player 4</span>
+                    <div class="dice-icon">🎲</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-text">Path: <span id="steps-3">0</span>/50</div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-3"></div></div>
+                </div>
+            </div>
+
+            <!-- Center Stone/Neon Spinner -->
+            <div class="spinner-wrapper">
+                <div class="spinner-pointer"></div>
+                <div class="spinner-wheel" id="spinner-wheel">
+                    <div class="stone-ring ring-1"></div>
+                    <div class="stone-ring ring-2"></div>
+                </div>
+                <div class="spinner-center">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18.5 5.7c1.446 1.604 1.453 3.483.894 4.61-1.187-2.736-2.567-4.349-4-5.69-2.5 2.5-3.242 5.271-3.272 9.091 0 2.176.818 4.552 2.939 6.129 2.235 1.647 5.93 4.117 7.96 2.814.743-.474 1.98-2.866 2.831-4.712.282-.582-.8.11-1.397-1.661-2.417-.656-.8.16-1.73-2.017-1.994-2.243c-.341-.288-.76-.51-1.16-.51c-.955 0-.792 1.292-1.096 2.217c-.767 2.311-.185 5.725 2.315 8.48c3.302 3.95 2.383 5.429-4.469 7.592c-5.67 1.538-8.23-.161-8.951-6.986c-.875-8.495 2.744-15.775 10.16-18.407z"/>
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+    </div>
+<script src="script.js"></script> 
+
+</body>
+</html>
